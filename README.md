@@ -1,12 +1,20 @@
 # AirAtlas
 
-AirAtlas is a lightweight, full-screen nearest flight display for a Raspberry
-Pi. It reads the Ultrafeeder `aircraft.json` feed, selects the most interesting
-nearby aircraft, and presents it in a large aviation-themed kiosk view.
+AirAtlas is a lightweight, full-screen nearest flight display for any Docker
+host that can reach a local readsb/tar1090-style `aircraft.json` feed. It
+works well on a Raspberry Pi running Ultrafeeder, but it can also run on
+another Linux server, mini PC, NAS, or Docker host that has network access to
+Ultrafeeder, tar1090, readsb, or a compatible aircraft feed.
+
+The display itself is just a web page. You can show it in Chromium kiosk mode
+on the same Raspberry Pi, on a wall-mounted tablet with a kiosk browser, on a
+desktop browser, or on any device on your home network.
+
+![AirAtlas nearest flight display](docs/images/nearest-flight1.png)
 
 ## What it does
 
-- Polls Ultrafeeder every 5 seconds.
+- Polls a readsb/tar1090-compatible `aircraft.json` feed every 5 seconds.
 - Prefers aircraft with a valid receiver distance.
 - Selects the nearest aircraft, using stronger RSSI as a tie-breaker when
   aircraft are within 0.5 nautical miles of each other.
@@ -18,7 +26,8 @@ nearby aircraft, and presents it in a large aviation-themed kiosk view.
 - Caches photo results in memory so the same aircraft is not requested every
   five seconds.
 - Enriches genuine airline callsigns with origin, destination, airport names,
-  and airline information from the FlightRadar24 REST API.
+  and airline information. The current route provider uses the FlightRadar24
+  REST API.
 - Shows provider-supplied route timing such as takeoff, first-seen, landed, or
   ETA when available. Times render in the browser display's local timezone.
 - Stores direction-aware route lookups in a persistent SQLite cache: successful
@@ -33,28 +42,56 @@ nearby aircraft, and presents it in a large aviation-themed kiosk view.
 - Keeps the last aircraft visible during a temporary feed error.
 - Shows `Scanning...` when the feed contains no aircraft.
 
-## Why the Compose file uses host networking
+## Aircraft feed requirements
 
-Your Ultrafeeder port mapping is:
+AirAtlas expects a JSON feed shaped like the `aircraft.json` produced by
+readsb/tar1090/Ultrafeeder:
 
 ```text
-Pi port 8080  --->  Ultrafeeder container port 80
+http://HOST:PORT/data/aircraft.json
 ```
 
-Therefore, the feed is available on the Pi at:
+At minimum, the app works best when aircraft include receiver distance
+(`r_dst`), bearing (`r_dir`), signal (`rssi`), callsign (`flight`), ICAO hex
+(`hex`), and common readsb enrichment fields such as registration (`r`),
+aircraft type (`t`), description (`desc`), owner/operator (`ownOp`), and year.
+
+The default Compose file assumes AirAtlas is running on the same Docker host as
+Ultrafeeder's published web port:
 
 ```text
 http://localhost:8080/data/aircraft.json
 ```
 
-Inside a normal container, `localhost` means that container—not the Pi.
-`network_mode: host` makes the AirAtlas container share the Pi's network
+If your feed is somewhere else, set `AIRCRAFT_URL` in `.env`.
+
+## Why the example Compose file uses host networking
+
+Many Raspberry Pi Ultrafeeder installs publish tar1090/readsb on the host, for
+example:
+
+```text
+Host port 8080  --->  Ultrafeeder container port 80
+```
+
+In that setup, the feed is available on the Docker host at:
+
+```text
+http://localhost:8080/data/aircraft.json
+```
+
+Inside a normal container, `localhost` means that container, not the host.
+`network_mode: host` makes the AirAtlas container share the host's network
 namespace, so `localhost:8080` reaches the published Ultrafeeder port.
 
-Host networking is supported on Raspberry Pi OS/Linux. With this mode, the
-application listens directly on Pi port 3000, so no `ports:` entry is needed.
+Host networking is supported on Linux, including Raspberry Pi OS. With this
+mode, the application listens directly on host port 3000, so no `ports:` entry
+is needed.
 
-## Install on the Raspberry Pi
+If you prefer a shared Docker network instead of host networking, see the
+alternative Compose example near the bottom of this README.
+
+## Install on a Raspberry Pi or other Docker host
 
 Create a project directory:
 
@@ -63,8 +100,8 @@ mkdir -p ~/airatlas
 cd ~/airatlas
 ```
 
-Copy this project's files into that directory using SCP, SFTP, or your VNC
-file-transfer method. The directory should look like:
+Copy this project's files into that directory using Git, SCP, SFTP, your VNC
+file-transfer method, or another workflow. The directory should look like:
 
 ```text
 airatlas/
@@ -103,6 +140,7 @@ AIRCRAFT_URL=http://localhost:8080/data/aircraft.json
 PLANESPOTTERS_CONTACT=your-real-email@example.com
 FR24_API_TOKEN=your-fr24-api-token
 ```
+`FR24_API_TOKEN` is optional. Without it, AirAtlas still works as a nearest-aircraft display using your local `aircraft.json` feed, but route/origin/destination enrichment is disabled.
 
 The FR24 token remains inside the backend container. It is never included in
 the browser API response or frontend JavaScript.
@@ -145,8 +183,9 @@ volumes:
 ```
 
 The workflow builds images for `linux/amd64`, `linux/arm64`, and
-`linux/arm/v7`. The `linux/arm/v7` image is the important one for a 32-bit
-Raspberry Pi 3B+ install.
+`linux/arm/v7`. The `linux/arm/v7` image is useful for 32-bit Raspberry Pi
+installs; `linux/arm64` is useful for 64-bit Pi OS and other ARM systems; and
+`linux/amd64` works on typical x86 servers and mini PCs.
 
 Check its status and logs:
 
@@ -155,29 +194,36 @@ docker compose ps
 docker compose logs -f airatlas
 ```
 
-Open the display from another computer:
+Open the display from another computer, tablet, or kiosk browser:
 
 ```text
 http://192.168.4.21:3000
 ```
 
-Substitute the Pi's current IP address if it changes.
+Substitute the AirAtlas host's current IP address if it changes.
 
-## Chromium kiosk mode
+## Display options
 
-On the Pi desktop, run:
+AirAtlas can be displayed anywhere that can reach the web app:
+
+- Chromium kiosk mode on the same Raspberry Pi or Linux desktop.
+- A tablet with a kiosk browser app.
+- A wall display, TV, or browser on another computer.
+- Any regular browser on your local network.
+
+On a Pi desktop or Linux desktop, Chromium kiosk mode looks like:
 
 ```bash
 chromium-browser --kiosk --noerrdialogs --disable-infobars http://localhost:3000
 ```
 
-Some Raspberry Pi OS versions name the executable `chromium` instead:
+Some Linux/Raspberry Pi OS versions name the executable `chromium` instead:
 
 ```bash
 chromium --kiosk --noerrdialogs --disable-infobars http://localhost:3000
 ```
 
-Press `Alt+F4` to leave kiosk mode.
+Press `Alt+F4` to leave kiosk mode on a desktop session.
 
 ## Configuration
 
@@ -187,7 +233,7 @@ URL should be set in `.env`; `compose.yaml` passes them into the container.
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `PORT` | `3000` | Web application port |
-| `AIRCRAFT_URL` | `http://localhost:8080/data/aircraft.json` | Ultrafeeder feed |
+| `AIRCRAFT_URL` | `http://localhost:8080/data/aircraft.json` | readsb/tar1090 aircraft feed |
 | `POLL_INTERVAL_MS` | `5000` | Server polling interval |
 | `FETCH_TIMEOUT_MS` | `4000` | Feed request timeout |
 | `PHOTO_TIMEOUT_MS` | `4500` | Planespotters request timeout |
@@ -229,7 +275,7 @@ Check the application health endpoint:
 curl http://localhost:3000/health
 ```
 
-Check the Ultrafeeder source directly:
+Check the aircraft feed directly:
 
 ```bash
 curl http://localhost:8080/data/aircraft.json
@@ -279,7 +325,7 @@ https://api.planespotters.net/pub/photos/hex/{HEX}?reg={REG}&icaoType={TYPE}
 ```
 
 The hex code is uppercased. Registration and ICAO type are included when
-available. Photo lookup runs separately from the Ultrafeeder polling loop, so a
+available. Photo lookup runs separately from the aircraft polling loop, so a
 slow or unavailable photo service does not delay live aircraft updates.
 
 Successful photo responses are cached for 24 hours. Empty results and failures
@@ -293,8 +339,8 @@ photo card shows the no-photo fallback.
 
 ## Flight routes
 
-Route enrichment uses the official FlightRadar24 REST API. A lookup is made
-only when the featured aircraft has:
+Route enrichment currently uses the official FlightRadar24 REST API. A lookup
+is made only when the featured aircraft has:
 
 - A trimmed callsign.
 - A registration.
@@ -303,7 +349,7 @@ only when the featured aircraft has:
 
 General-aviation aircraft transmitting their registration as the callsign are
 not queried. Only the single featured aircraft is considered; the application
-never submits all aircraft in the Ultrafeeder feed.
+never submits all aircraft in the feed.
 
 An active FR24 API subscription and token are required. Relevant official
 documentation:
@@ -356,8 +402,11 @@ docker compose up -d --build
 
 This bypasses Summary Light and uses Live Flight Positions Full directly.
 
-The provider is isolated under `src/routes/`, making it possible to replace
-FR24 with another provider later without rewriting the display.
+The provider is isolated under `src/routes/`, making it possible to add or
+replace route providers later without rewriting the display. FlightAware,
+AirLabs, or another route source could be added by implementing the same
+normalized route-provider shape. Contributions, forks, and provider requests
+are welcome.
 
 ### Persistent cache
 

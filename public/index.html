@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#071017" />
+    <title>AirAtlas</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="display-shell">
+      <header class="top-bar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">&#9992;</span>
+          <div>
+            <p class="eyebrow">NEAREST FLIGHT DISPLAY</p>
+            <h1>AIRATLAS</h1>
+          </div>
+        </div>
+        <div class="feed-state">
+          <span id="status-dot" class="status-dot"></span>
+          <span id="feed-label">CONNECTING</span>
+        </div>
+      </header>
+
+      <section id="aircraft-panel" class="aircraft-panel" hidden>
+        <div class="identity">
+          <p class="section-label">NEAREST TRAFFIC</p>
+          <div class="flight-row">
+            <h2 id="flight">&mdash;</h2>
+            <span id="trend" class="trend" hidden></span>
+          </div>
+
+          <section id="route-section" class="route-section" hidden>
+            <div class="route-airport">
+              <strong id="route-origin">&mdash;</strong>
+              <span id="route-origin-code">&mdash;</span>
+              <time id="route-departure-time" hidden></time>
+            </div>
+            <div class="route-direction" aria-hidden="true">
+              <span></span>
+              <b>&darr;</b>
+            </div>
+            <div class="route-airport">
+              <strong id="route-destination">&mdash;</strong>
+              <span id="route-destination-code">&mdash;</span>
+              <time id="route-arrival-time" hidden></time>
+            </div>
+            <p id="route-airline" class="route-airline" hidden></p>
+            <div id="route-progress" class="route-progress" hidden>
+              <span></span>
+            </div>
+          </section>
+
+          <p id="route-loading" class="route-loading" hidden>CHECKING FLIGHT ROUTE</p>
+
+          <div class="aircraft-summary">
+            <span id="type">TYPE &mdash;</span>
+            <span class="divider"></span>
+            <span id="registration">REG &mdash;</span>
+          </div>
+        </div>
+
+        <div class="aircraft-info">
+          <p id="description">&mdash;</p>
+          <p id="operator">&mdash;</p>
+        </div>
+
+        <aside class="visual-card">
+          <div class="photo-pane">
+            <a id="photo-link" class="photo-link" href="#" target="_blank" hidden>
+              <img id="aircraft-photo" alt="" />
+            </a>
+            <p id="photo-attribution" class="photo-attribution" hidden></p>
+            <div id="photo-fallback" class="photo-fallback">
+              <div class="radar" aria-hidden="true">
+                <div class="radar-ring ring-one"></div>
+                <div class="radar-ring ring-two"></div>
+                <div class="radar-ring ring-three"></div>
+                <div class="radar-cross horizontal"></div>
+                <div class="radar-cross vertical"></div>
+                <div class="bearing-pointer">
+                  <span>&#9992;</span>
+                </div>
+                <div class="radar-center"></div>
+              </div>
+              <p id="photo-fallback-label">PHOTO SEARCH</p>
+            </div>
+          </div>
+
+          <div class="radar-pane">
+            <div class="radar" aria-hidden="true">
+              <div class="radar-ring ring-one"></div>
+              <div class="radar-ring ring-two"></div>
+              <div class="radar-ring ring-three"></div>
+              <div class="radar-cross horizontal"></div>
+              <div class="radar-cross vertical"></div>
+              <div class="bearing-pointer">
+                <span>&#9992;</span>
+              </div>
+              <div class="radar-center"></div>
+            </div>
+            <p>BEARING RADAR</p>
+          </div>
+        </aside>
+
+        <div class="stats-grid">
+          <article class="stat">
+            <p>ALTITUDE</p>
+            <strong id="altitude">&mdash;</strong>
+            <span>FT</span>
+          </article>
+          <article class="stat">
+            <p>GROUND SPEED</p>
+            <strong id="speed">&mdash;</strong>
+            <span>KT</span>
+            <small id="speed-mph">&mdash; MPH</small>
+          </article>
+          <article class="stat">
+            <p>DISTANCE</p>
+            <strong id="distance">&mdash;</strong>
+            <span>NM</span>
+            <small id="distance-miles">&mdash; MI</small>
+          </article>
+          <article class="stat">
+            <p>SIGNAL</p>
+            <strong id="signal">&mdash;</strong>
+            <span>DBFS</span>
+          </article>
+          <article class="stat bearing-stat">
+            <p>BEARING</p>
+            <strong id="bearing">&mdash;</strong>
+            <span>DEG</span>
+          </article>
+        </div>
+      </section>
+
+      <section id="empty-panel" class="empty-panel">
+        <div class="scanner" aria-hidden="true">
+          <span></span>
+        </div>
+        <h2 id="empty-title">Scanning...</h2>
+        <p id="empty-message">Searching the local sky for aircraft</p>
+      </section>
+
+      <footer>
+        <span id="aircraft-count">0 AIRCRAFT IN FEED</span>
+        <span id="last-update">WAITING FOR FIRST UPDATE</span>
+      </footer>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

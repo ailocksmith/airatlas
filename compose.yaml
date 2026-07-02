@@ -1,0 +1,22 @@
+services:
+  airatlas:
+    build: .
+    container_name: airatlas
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      PORT: "3000"
+      AIRCRAFT_URL: "${AIRCRAFT_URL:-http://localhost:8080/data/aircraft.json}"
+      POLL_INTERVAL_MS: "5000"
+      FETCH_TIMEOUT_MS: "4000"
+      PHOTO_TIMEOUT_MS: "4500"
+      PLANESPOTTERS_CONTACT: "${PLANESPOTTERS_CONTACT:-}"
+      ROUTE_TIMEOUT_MS: "5000"
+      ROUTE_CACHE_PATH: "/app/data/routes.sqlite"
+      FR24_API_TOKEN: "${FR24_API_TOKEN:-}"
+      FR24_ROUTE_MODE: "${FR24_ROUTE_MODE:-summary-first}"
+    volumes:
+      - route-cache:/app/data
+
+volumes:
+  route-cache:

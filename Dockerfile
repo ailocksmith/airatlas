@@ -9,7 +9,7 @@ ENV PATH="$PNPM_HOME:$PATH"
 
 COPY package.json pnpm-lock.yaml ./
 RUN corepack enable \
-  && corepack prepare pnpm@11.7.0 --activate \
+  && corepack prepare pnpm@10.15.1 --activate \
   && pnpm install --prod --frozen-lockfile
 
 COPY src ./src

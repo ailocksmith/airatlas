@@ -4,7 +4,7 @@
   "private": true,
   "description": "AirAtlas is a lightweight, kiosk-friendly nearest-flight display.",
   "main": "src/server.js",
-  "packageManager": "pnpm@11.7.0",
+  "packageManager": "pnpm@10.15.1",
   "scripts": {
     "start": "node src/server.js",
     "test": "node --test"

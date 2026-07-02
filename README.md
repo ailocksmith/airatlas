@@ -93,6 +93,13 @@ alternative Compose example near the bottom of this README.
 
 ## Install on a Raspberry Pi or other Docker host
 
+The easiest way to run AirAtlas is with the published GitHub Container Registry
+image:
+
+```text
+ghcr.io/ailocksmith/airatlas:latest
+```
+
 Create a project directory:
 
 ```bash
@@ -100,67 +107,12 @@ mkdir -p ~/airatlas
 cd ~/airatlas
 ```
 
-Copy this project's files into that directory using Git, SCP, SFTP, your VNC
-file-transfer method, or another workflow. The directory should look like:
-
-```text
-airatlas/
-|-- .env.example
-|-- compose.yaml
-|-- Dockerfile
-|-- package.json
-|-- pnpm-lock.yaml
-|-- public/
-|   |-- app.js
-|   |-- index.html
-|   `-- styles.css
-`-- src/
-    |-- aircraft.js
-    |-- photos.js
-    |-- routes/
-    |   |-- fr24-provider.js
-    |   |-- route-provider.js
-    |   `-- sqlite-route-cache.js
-    `-- server.js
-```
-
-Create a `.env` file for local configuration. Planespotters requires a contact
-email or contact URL in the server-side `User-Agent` so they can identify
-legitimate applications:
-
-```bash
-cp .env.example .env
-nano .env
-```
-
-Set the value:
-
-```text
-AIRCRAFT_URL=http://localhost:8080/data/aircraft.json
-PLANESPOTTERS_CONTACT=your-real-email@example.com
-FR24_API_TOKEN=your-fr24-api-token
-```
-`FR24_API_TOKEN` is optional. Without it, AirAtlas still works as a nearest-aircraft display using your local `aircraft.json` feed, but route/origin/destination enrichment is disabled.
-
-The FR24 token remains inside the backend container. It is never included in
-the browser API response or frontend JavaScript.
-
-Build and start it:
-
-```bash
-docker compose up -d --build
-```
-
-## Use the published container image
-
-After this project is published to GitHub and the container workflow has run,
-you can use the GitHub Container Registry image instead of building locally.
-Replace `YOUR-GITHUB-USER` with the repository owner:
+Create a `compose.yaml` file:
 
 ```yaml
 services:
   airatlas:
-    image: ghcr.io/YOUR-GITHUB-USER/airatlas:latest
+    image: ghcr.io/ailocksmith/airatlas:latest
     container_name: airatlas
     restart: unless-stopped
     network_mode: host
@@ -182,9 +134,40 @@ volumes:
   route-cache:
 ```
 
-The workflow builds images for `linux/amd64`, `linux/arm64`, and
-`linux/arm/v7`. The `linux/arm/v7` image is useful for 32-bit Raspberry Pi
-installs; `linux/arm64` is useful for 64-bit Pi OS and other ARM systems; and
+Create a `.env` file for local configuration:
+
+```bash
+nano .env
+```
+
+Example `.env`:
+
+```text
+AIRCRAFT_URL=http://localhost:8080/data/aircraft.json
+PLANESPOTTERS_CONTACT=your-real-email@example.com
+FR24_API_TOKEN=your-fr24-api-token
+```
+
+`FR24_API_TOKEN` is optional. Without it, AirAtlas still works as a
+nearest-aircraft display using your local `aircraft.json` feed, but
+route/origin/destination enrichment is disabled.
+
+`PLANESPOTTERS_CONTACT` is optional but required for aircraft photos. Without
+it, AirAtlas still displays aircraft data and route information, but the photo
+card uses the fallback radar view.
+
+The FR24 token remains inside the backend container. It is never included in
+the browser API response or frontend JavaScript.
+
+Start AirAtlas:
+
+```bash
+docker compose up -d
+```
+
+The published image supports `linux/amd64`, `linux/arm64`, and `linux/arm/v7`.
+The `linux/arm/v7` image is useful for 32-bit Raspberry Pi installs;
+`linux/arm64` is useful for 64-bit Pi OS and other ARM systems; and
 `linux/amd64` works on typical x86 servers and mini PCs.
 
 Check its status and logs:
@@ -201,6 +184,17 @@ http://192.168.4.21:3000
 ```
 
 Substitute the AirAtlas host's current IP address if it changes.
+
+### Build locally from source
+
+Most users should use the published image above. If you want to develop,
+customize, or test local code changes, clone the repository and build locally:
+
+```bash
+git clone https://github.com/ailocksmith/airatlas.git
+cd airatlas
+docker compose up -d --build
+```
 
 ## Display options
 
@@ -246,7 +240,7 @@ URL should be set in `.env`; `compose.yaml` passes them into the container.
 After changing configuration, recreate the container:
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 ## Useful commands
@@ -263,7 +257,14 @@ Stop:
 docker compose down
 ```
 
-Update after copying changed source files:
+Pull the latest published image and restart:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+If you are building from source, rebuild after local code changes:
 
 ```bash
 docker compose up -d --build
@@ -307,10 +308,10 @@ The GitHub Actions workflow in `.github/workflows/docker-publish.yml`:
 - publishes to GitHub Container Registry on pushes to `main` and version tags;
 - builds pull requests without publishing an image.
 
-Typical image name:
+Published image:
 
 ```text
-ghcr.io/YOUR-GITHUB-USER/airatlas:latest
+ghcr.io/ailocksmith/airatlas:latest
 ```
 
 For a release tag such as `v6.1.0`, the workflow also publishes semver tags
@@ -397,7 +398,7 @@ FR24_ROUTE_MODE=full-only
 Then recreate the container:
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 This bypasses Summary Light and uses Live Flight Positions Full directly.
